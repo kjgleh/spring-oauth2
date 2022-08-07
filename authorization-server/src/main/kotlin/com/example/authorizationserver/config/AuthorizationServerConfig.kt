@@ -30,13 +30,6 @@ import java.util.UUID
 class AuthorizationServerConfig {
 
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    fun authServerSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http)
-        return http.formLogin(Customizer.withDefaults()).build()
-    }
-
-    @Bean
     fun registeredClientRepository(): RegisteredClientRepository {
         val registeredClient =
             RegisteredClient.withId(UUID.randomUUID().toString())
@@ -45,12 +38,26 @@ class AuthorizationServerConfig {
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/articles-client-oidc")
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/users-client-oidc")
                 .redirectUri("http://127.0.0.1:8080/authorized")
                 .scope(OidcScopes.OPENID)
                 .scope("read")
                 .build()
         return InMemoryRegisteredClientRepository(registeredClient)
+    }
+
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    fun authServerSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http)
+        return http.formLogin(Customizer.withDefaults()).build()
+    }
+
+    @Bean
+    fun providerSettings(): ProviderSettings {
+        return ProviderSettings.builder()
+            .issuer("http://auth-server:8000")
+            .build()
     }
 
     @Bean
@@ -60,13 +67,6 @@ class AuthorizationServerConfig {
         return JWKSource { jwkSelector: JWKSelector, securityContext: SecurityContext? ->
             jwkSelector.select(jwkSet)
         }
-    }
-
-    @Bean
-    fun providerSettings(): ProviderSettings {
-        return ProviderSettings.builder()
-            .issuer("http://auth-server:8000")
-            .build()
     }
 
     companion object {
